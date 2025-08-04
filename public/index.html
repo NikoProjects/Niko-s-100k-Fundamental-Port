@@ -45,10 +45,10 @@
   <p>Live Alpaca account data.</p>
 
   <h2>Live Portfolio Equity: <span id="liveEquity">Loading...</span></h2>
-  <h2>Portfolio : <span id="portfolioBeta">Loading...</span></h2>
+  <h2>Portfolio Beta: <span id="portfolioBeta">Loading...</span></h2>
 
   <h2>P&L Over Time</h2>
-  <canvas id="liveEquityChart" width="900" height="300"></canvas>
+  <canvas id="pnlChart" width="900" height="300"></canvas>
 
   <h2>Returns (%)</h2>
   <table class="returns-table" aria-label="Returns Table">
@@ -86,17 +86,14 @@
   <script>
     async function fetchData() {
       try {
-        // Fetch portfolio beta
         const betaRes = await fetch('/api/portfolio_beta');
         const betaData = await betaRes.json();
         document.getElementById('portfolioBeta').textContent = betaData.portfolio_beta;
 
-        // Fetch live equity
         const balRes = await fetch('/api/account_balance');
         const balData = await balRes.json();
         document.getElementById('liveEquity').textContent = `$${balData.equity.toFixed(2)}`;
 
-        // Fetch returns
         const returnsRes = await fetch('/api/returns');
         const returnsData = await returnsRes.json();
         ['1d', '1m', '3m', '6m', '1y'].forEach(period => {
@@ -109,14 +106,14 @@
           }
         });
 
-        // Fetch portfolio history for equity chart
-        const portfolioHistoryRes = await fetch('/api/portfolio_history');
-        const portfolioHistory = await portfolioHistoryRes.json();
+        const pnlRes = await fetch('/api/pnl');
+        const tradesRes = await fetch('/api/trades');
+        const pnlData = await pnlRes.json();
+        const trades = await tradesRes.json();
 
-        const ctx = document.getElementById('liveEquityChart').getContext('2d');
-        const labels = portfolioHistory.timestamp.map(t => new Date(t).toLocaleDateString());
-        const data = portfolioHistory.equity.map(e => e.toFixed(2));
-
+        const ctx = document.getElementById('pnlChart').getContext('2d');
+        const labels = pnlData.map(p => p.date);
+        const data = pnlData.map(p => p.pnl.toFixed(2));
         if (window.pnlChartInstance) window.pnlChartInstance.destroy();
 
         window.pnlChartInstance = new Chart(ctx, {
@@ -124,7 +121,7 @@
           data: {
             labels: labels,
             datasets: [{
-              label: 'Portfolio Equity',
+              label: 'Cumulative P&L',
               data: data,
               borderColor: '#2563eb',
               backgroundColor: 'rgba(37, 99, 235, 0.2)',
@@ -136,15 +133,11 @@
             responsive: false,
             scales: {
               y: {
-                beginAtZero: false
+                beginAtZero: true
               }
             }
           }
         });
-
-        // Fetch trades and populate trade log table
-        const tradesRes = await fetch('/api/trades');
-        const trades = await tradesRes.json();
 
         const tbody = document.querySelector('#tradeTable tbody');
         tbody.innerHTML = '';
