@@ -5,140 +5,378 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Live Alpaca Portfolio Dashboard</title>
   <style>
+    /* Reset some basic elements */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: Arial, sans-serif;
-      max-width: 900px;
-      margin: 2rem auto;
-      padding: 0 1rem;
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f4ff;
+      color: #1e293b;
+      display: flex;
+      justify-content: center;
+      padding: 2rem 1rem;
+      min-height: 100vh;
+    }
+
+    main {
+      max-width: 960px;
+      width: 100%;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 6px 18px rgba(59, 130, 246, 0.2);
+      padding: 2rem 2.5rem 3rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2.5rem;
+    }
+
+    header {
+      text-align: center;
+      border-bottom: 2px solid #2563eb;
+      padding-bottom: 1rem;
+    }
+
+    header h1 {
+      font-weight: 700;
+      font-size: 2.2rem;
+      color: #2563eb;
+      margin-bottom: 0.3rem;
+      letter-spacing: 0.05em;
+    }
+
+    header p {
+      font-weight: 500;
+      font-size: 1rem;
+      color: #475569;
+      margin-top: 0;
+      font-style: italic;
+    }
+
+    /* Info panels */
+    .info-panels {
+      display: flex;
+      gap: 1.5rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .info-panel {
+      flex: 1 1 250px;
+      background: #f1f5f9;
+      border-radius: 10px;
+      padding: 1.4rem 2rem;
+      box-shadow: inset 0 0 10px #cbd5e1;
+      text-align: center;
+      transition: background-color 0.3s ease;
+    }
+    .info-panel:hover {
+      background-color: #e0e7ff;
+    }
+    .info-panel h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #3b82f6;
+      margin-bottom: 0.6rem;
+      letter-spacing: 0.03em;
+    }
+    .info-panel span.value {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #1e293b;
+      letter-spacing: 0.02em;
+    }
+    .info-panel span.value.positive {
+      color: #16a34a;
+    }
+    .info-panel span.value.negative {
+      color: #dc2626;
+    }
+
+    /* Chart section */
+    section.chart-section {
       background: #f9fafb;
-      color: #111827;
+      border-radius: 12px;
+      padding: 1rem 1.5rem;
+      box-shadow: 0 3px 10px rgba(37, 99, 235, 0.15);
     }
-    h1, h2 {
+    section.chart-section h2 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #1e40af;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+    canvas#pnlChart {
+      display: block;
+      max-width: 100%;
+      margin: 0 auto;
+      border-radius: 8px;
+      background: white;
+      box-shadow: 0 2px 6px rgb(59 130 246 / 0.2);
+      padding: 1rem;
+    }
+
+    /* Returns table */
+    table.returns-table {
+      width: 300px;
+      margin: 0 auto;
+      border-collapse: separate;
+      border-spacing: 0 8px;
+      box-shadow: 0 4px 12px rgb(59 130 246 / 0.15);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #f1f5f9;
+    }
+    table.returns-table th, table.returns-table td {
+      text-align: center;
+      padding: 0.8rem 1rem;
+      font-weight: 600;
+      font-size: 1rem;
+    }
+    table.returns-table th {
+      background: #2563eb;
+      color: white;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    table.returns-table tbody tr {
+      background: white;
+      transition: background-color 0.25s ease;
+      cursor: default;
+      border-radius: 8px;
+    }
+    table.returns-table tbody tr:hover {
+      background-color: #dbeafe;
+    }
+    table.returns-table tbody td {
+      font-weight: 500;
+      color: #1e293b;
+    }
+
+    /* Trade log table */
+    section.trade-log {
+      overflow-x: auto;
+      border-radius: 12px;
+      box-shadow: 0 6px 18px rgba(59, 130, 246, 0.12);
+      background: white;
+      padding: 1rem 1rem 0;
+    }
+    section.trade-log h2 {
+      font-size: 1.6rem;
+      font-weight: 700;
       color: #1e3a8a;
+      margin-bottom: 1rem;
+      text-align: center;
     }
-    table {
+    table#tradeTable {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 1rem;
+      font-size: 0.95rem;
+      color: #334155;
+      min-width: 650px;
     }
-    th, td {
-      text-align: left;
-      padding: 8px 12px;
-      border-bottom: 1px solid #ddd;
+    table#tradeTable thead {
+      background-color: #2563eb;
+      color: white;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
-    th {
-      background: #e0e7ff;
+    table#tradeTable th, table#tradeTable td {
+      padding: 0.65rem 1rem;
+      border-bottom: 1px solid #e0e7ff;
+      text-align: center;
+      vertical-align: middle;
     }
-    .chart-container {
-      margin: 2rem 0;
-      height: 300px;
+    table#tradeTable tbody tr:hover {
+      background-color: #e0e7ff;
     }
-    .returns-table {
-      margin-top: 1rem;
-      width: 50%;
+    table#tradeTable tbody td:nth-child(6) {
+      font-size: 0.8rem;
+      color: #64748b;
+      font-family: monospace;
+      word-break: break-all;
+    }
+
+    /* Responsive tweaks */
+    @media (max-width: 720px) {
+      .info-panels {
+        flex-direction: column;
+      }
+      table.returns-table {
+        width: 100%;
+      }
+      section.trade-log {
+        padding: 1rem 0.5rem 0;
+      }
     }
   </style>
 </head>
 <body>
+  <main>
+    <header>
+      <h1>Niko's Model 100k Portfolio</h1>
+      <p>Live Alpaca account data.</p>
+    </header>
 
-  <h1>Niko's Model 100k Portfolio</h1>
-  <p>Live Alpaca account data.</p>
+    <div class="info-panels">
+      <div class="info-panel">
+        <h2>Live Portfolio Equity</h2>
+        <span id="liveEquity" class="value">Loading...</span>
+      </div>
+      <div class="info-panel">
+        <h2>Portfolio Beta</h2>
+        <span id="portfolioBeta" class="value">Loading...</span>
+      </div>
+    </div>
 
-  <h2>Live Portfolio Equity: <span id="liveEquity">Loading...</span></h2>
-  <h2>Portfolio Beta: <span id="portfolioBeta">Loading...</span></h2>
+    <section class="chart-section" aria-label="P&L Over Time Chart">
+      <h2>P&L Over Time</h2>
+      <canvas id="pnlChart" width="900" height="300" role="img" aria-describedby="pnlDesc"></canvas>
+      <p id="pnlDesc" class="sr-only">Line chart showing cumulative profit and loss over time</p>
+    </section>
 
-  <h2>P&L Over Time</h2>
-  <canvas id="pnlChart" width="900" height="300"></canvas>
+    <section aria-label="Returns Table">
+      <h2 style="text-align:center; color:#1e40af;">Returns (%)</h2>
+      <table class="returns-table" aria-live="polite">
+        <thead>
+          <tr>
+            <th>Period</th>
+            <th>Return (%)</th>
+          </tr>
+        </thead>
+        <tbody id="returnsBody">
+          <tr><td>1 Day</td><td id="return-1d">Loading...</td></tr>
+          <tr><td>1 Month</td><td id="return-1m">Loading...</td></tr>
+          <tr><td>3 Months</td><td id="return-3m">Loading...</td></tr>
+          <tr><td>6 Months</td><td id="return-6m">Loading...</td></tr>
+          <tr><td>1 Year</td><td id="return-1y">Loading...</td></tr>
+        </tbody>
+      </table>
+    </section>
 
-  <h2>Returns (%)</h2>
-  <table class="returns-table" aria-label="Returns Table">
-    <thead>
-      <tr>
-        <th>Period</th>
-        <th>Return (%)</th>
-      </tr>
-    </thead>
-    <tbody id="returnsBody">
-      <tr><td>1 Day</td><td id="return-1d">Loading...</td></tr>
-      <tr><td>1 Month</td><td id="return-1m">Loading...</td></tr>
-      <tr><td>3 Months</td><td id="return-3m">Loading...</td></tr>
-      <tr><td>6 Months</td><td id="return-6m">Loading...</td></tr>
-      <tr><td>1 Year</td><td id="return-1y">Loading...</td></tr>
-    </tbody>
-  </table>
-
-  <h2>Trade Log</h2>
-  <table id="tradeTable" aria-label="Trade Log Table">
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>Ticker</th>
-        <th>Side</th>
-        <th>Quantity</th>
-        <th>Price</th>
-        <th>Execution ID</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+    <section class="trade-log" aria-label="Trade Log">
+      <h2>Trade Log</h2>
+      <table id="tradeTable" aria-live="polite">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Ticker</th>
+            <th>Side</th>
+            <th>Quantity</th>
+            <th>Price</th>
+            <th>Execution ID</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </main>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
     async function fetchData() {
       try {
-        const betaRes = await fetch('/api/portfolio_beta');
+        const [betaRes, balRes, returnsRes, pnlRes, tradesRes] = await Promise.all([
+          fetch('/api/portfolio_beta'),
+          fetch('/api/account_balance'),
+          fetch('/api/returns'),
+          fetch('/api/pnl'),
+          fetch('/api/trades'),
+        ]);
+
         const betaData = await betaRes.json();
-        document.getElementById('portfolioBeta').textContent = betaData.portfolio_beta;
+        document.getElementById('portfolioBeta').textContent = betaData.portfolio_beta ?? 'N/A';
 
-        const balRes = await fetch('/api/account_balance');
         const balData = await balRes.json();
-        document.getElementById('liveEquity').textContent = `$${balData.equity.toFixed(2)}`;
+        document.getElementById('liveEquity').textContent = balData.equity != null ? `$${balData.equity.toFixed(2)}` : 'N/A';
 
-        const returnsRes = await fetch('/api/returns');
         const returnsData = await returnsRes.json();
         ['1d', '1m', '3m', '6m', '1y'].forEach(period => {
           const el = document.getElementById(`return-${period}`);
           if (returnsData[period] == null) {
             el.textContent = 'N/A';
+            el.classList.remove('positive', 'negative');
+            el.style.color = '';
           } else {
-            el.textContent = returnsData[period].toFixed(2) + '%';
-            el.style.color = returnsData[period] >= 0 ? 'green' : 'red';
+            const val = returnsData[period];
+            el.textContent = val.toFixed(2) + '%';
+            el.classList.remove('positive', 'negative');
+            if (val >= 0) {
+              el.classList.add('positive');
+              el.style.color = '#16a34a'; // green
+            } else {
+              el.classList.add('negative');
+              el.style.color = '#dc2626'; // red
+            }
           }
         });
 
-        const pnlRes = await fetch('/api/pnl');
-        const tradesRes = await fetch('/api/trades');
         const pnlData = await pnlRes.json();
         const trades = await tradesRes.json();
 
+        // Chart
         const ctx = document.getElementById('pnlChart').getContext('2d');
         const labels = pnlData.map(p => p.date);
-        const data = pnlData.map(p => p.pnl.toFixed(2));
+        const data = pnlData.map(p => Number(p.pnl.toFixed(2)));
         if (window.pnlChartInstance) window.pnlChartInstance.destroy();
 
         window.pnlChartInstance = new Chart(ctx, {
           type: 'line',
           data: {
-            labels: labels,
+            labels,
             datasets: [{
               label: 'Cumulative P&L',
-              data: data,
+              data,
               borderColor: '#2563eb',
-              backgroundColor: 'rgba(37, 99, 235, 0.2)',
+              backgroundColor: 'rgba(37, 99, 235, 0.25)',
               fill: true,
               tension: 0.3,
+              pointRadius: 3,
+              pointHoverRadius: 5,
             }]
           },
           options: {
             responsive: false,
+            plugins: {
+              legend: {
+                labels: { font: { weight: 'bold', size: 14 } }
+              },
+              tooltip: {
+                mode: 'index',
+                intersect: false,
+                callbacks: {
+                  label: ctx => `$${ctx.parsed.y.toFixed(2)}`
+                }
+              }
+            },
             scales: {
               y: {
-                beginAtZero: true
+                beginAtZero: true,
+                grid: {
+                  color: '#e0e7ff'
+                },
+                ticks: {
+                  font: { size: 12 }
+                }
+              },
+              x: {
+                grid: {
+                  color: '#e0e7ff'
+                },
+                ticks: {
+                  font: { size: 12 }
+                }
               }
             }
           }
         });
 
+        // Trades Table
         const tbody = document.querySelector('#tradeTable tbody');
         tbody.innerHTML = '';
         trades.forEach(t => {
@@ -146,10 +384,10 @@
           tr.innerHTML = `
             <td>${t.date}</td>
             <td>${t.symbol}</td>
-            <td>${t.side}</td>
+            <td>${t.side.charAt(0).toUpperCase() + t.side.slice(1)}</td>
             <td>${t.qty}</td>
             <td>$${Number(t.price).toFixed(2)}</td>
-            <td style="font-size: 0.8em; color: #666;">${t.id}</td>
+            <td style="font-family: monospace; color: #64748b; font-size: 0.8em;">${t.id}</td>
           `;
           tbody.appendChild(tr);
         });
