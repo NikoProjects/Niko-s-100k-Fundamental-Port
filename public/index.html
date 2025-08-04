@@ -95,30 +95,6 @@
       color: #dc2626;
     }
 
-    /* Chart section */
-    section.chart-section {
-      background: #f9fafb;
-      border-radius: 12px;
-      padding: 1rem 1.5rem;
-      box-shadow: 0 3px 10px rgba(37, 99, 235, 0.15);
-    }
-    section.chart-section h2 {
-      font-size: 1.4rem;
-      font-weight: 700;
-      color: #1e40af;
-      margin-bottom: 1rem;
-      text-align: center;
-    }
-    canvas#pnlChart {
-      display: block;
-      max-width: 100%;
-      margin: 0 auto;
-      border-radius: 8px;
-      background: white;
-      box-shadow: 0 2px 6px rgb(59 130 246 / 0.2);
-      padding: 1rem;
-    }
-
     /* Trade log table */
     section.trade-log {
       overflow-x: auto;
@@ -195,13 +171,11 @@
         <h2>All-Time Return</h2>
         <span id="allTimeReturn" class="value">Loading...</span>
       </div>
+      <div class="info-panel">
+        <h2>Total Buying Power Used</h2>
+        <span id="buyingPowerUsed" class="value">Loading...</span>
+      </div>
     </div>
-
-    <section class="chart-section" aria-label="P&L Over Time Chart">
-      <h2>P&L Over Time</h2>
-      <canvas id="pnlChart" width="900" height="300" role="img" aria-describedby="pnlDesc"></canvas>
-      <p id="pnlDesc" class="sr-only">Line chart showing cumulative profit and loss over time</p>
-    </section>
 
     <section class="trade-log" aria-label="Trade Log">
       <h2>Trade Log</h2>
@@ -221,9 +195,8 @@
     </section>
   </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
-    const INITIAL_CAPITAL = 100000; // Change this to your actual initial capital
+    const INITIAL_CAPITAL = 100000; // Adjust this to your actual initial capital
 
     async function fetchData() {
       try {
@@ -252,67 +225,23 @@
           document.getElementById('allTimeReturn').style.color = '';
         }
 
-        const pnlData = await pnlRes.json();
-        const trades = await tradesRes.json();
-
-        // Chart (still cumulative P&L for now)
-        const ctx = document.getElementById('pnlChart').getContext('2d');
-        const labels = pnlData.map(p => p.date);
-        const data = pnlData.map(p => Number(p.pnl.toFixed(2)));
-        if (window.pnlChartInstance) window.pnlChartInstance.destroy();
-
-        window.pnlChartInstance = new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels,
-            datasets: [{
-              label: 'Cumulative P&L',
-              data,
-              borderColor: '#2563eb',
-              backgroundColor: 'rgba(37, 99, 235, 0.25)',
-              fill: true,
-              tension: 0.3,
-              pointRadius: 3,
-              pointHoverRadius: 5,
-            }]
-          },
-          options: {
-            responsive: false,
-            plugins: {
-              legend: {
-                labels: { font: { weight: 'bold', size: 14 } }
-              },
-              tooltip: {
-                mode: 'index',
-                intersect: false,
-                callbacks: {
-                  label: ctx => `$${ctx.parsed.y.toFixed(2)}`
-                }
-              }
-            },
-            scales: {
-              y: {
-                beginAtZero: true,
-                grid: {
-                  color: '#e0e7ff'
-                },
-                ticks: {
-                  font: { size: 12 }
-                }
-              },
-              x: {
-                grid: {
-                  color: '#e0e7ff'
-                },
-                ticks: {
-                  font: { size: 12 }
-                }
-              }
-            }
-          }
-        });
+        // Calculate Buying Power Used = total_buying_power - buying_power_available
+        if (balData.buying_power != null && balData.cash != null) {
+          // Alpaca's buying_power field is the buying power available
+          // Total buying power = cash + buying_power_available (roughly)
+          // So buying_power_used = total_buying_power - buying_power_available
+          const totalBuyingPower = balData.cash + balData.buying_power;
+          const buyingPowerUsed = totalBuyingPower - balData.buying_power;
+          const buyingPowerUsedEl = document.getElementById('buyingPowerUsed');
+          buyingPowerUsedEl.textContent = `$${buyingPowerUsed.toFixed(2)}`;
+          buyingPowerUsedEl.style.color = buyingPowerUsed > 0 ? '#dc2626' : '#16a34a';
+        } else {
+          document.getElementById('buyingPowerUsed').textContent = 'N/A';
+          document.getElementById('buyingPowerUsed').style.color = '';
+        }
 
         // Trades Table
+        const trades = await tradesRes.json();
         const tbody = document.querySelector('#tradeTable tbody');
         tbody.innerHTML = '';
         trades.forEach(t => {
