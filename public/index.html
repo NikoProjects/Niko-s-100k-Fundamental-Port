@@ -95,42 +95,28 @@
       color: #dc2626;
     }
 
-    /* Returns table */
-    table.returns-table {
-      width: 300px;
-      margin: 0 auto;
-      border-collapse: separate;
-      border-spacing: 0 8px;
-      box-shadow: 0 4px 12px rgb(59 130 246 / 0.15);
+    /* Chart section */
+    section.chart-section {
+      background: #f9fafb;
       border-radius: 12px;
-      overflow: hidden;
-      background: #f1f5f9;
+      padding: 1rem 1.5rem;
+      box-shadow: 0 3px 10px rgba(37, 99, 235, 0.15);
     }
-    table.returns-table th, table.returns-table td {
-      text-align: center;
-      padding: 0.8rem 1rem;
-      font-weight: 600;
-      font-size: 1rem;
-    }
-    table.returns-table th {
-      background: #2563eb;
-      color: white;
+    section.chart-section h2 {
+      font-size: 1.4rem;
       font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
+      color: #1e40af;
+      margin-bottom: 1rem;
+      text-align: center;
     }
-    table.returns-table tbody tr {
-      background: white;
-      transition: background-color 0.25s ease;
-      cursor: default;
+    canvas#pnlChart {
+      display: block;
+      max-width: 100%;
+      margin: 0 auto;
       border-radius: 8px;
-    }
-    table.returns-table tbody tr:hover {
-      background-color: #dbeafe;
-    }
-    table.returns-table tbody td {
-      font-weight: 500;
-      color: #1e293b;
+      background: white;
+      box-shadow: 0 2px 6px rgb(59 130 246 / 0.2);
+      padding: 1rem;
     }
 
     /* Trade log table */
@@ -183,9 +169,6 @@
       .info-panels {
         flex-direction: column;
       }
-      table.returns-table {
-        width: 100%;
-      }
       section.trade-log {
         padding: 1rem 0.5rem 0;
       }
@@ -208,25 +191,16 @@
         <h2>Portfolio Beta</h2>
         <span id="portfolioBeta" class="value">Loading...</span>
       </div>
+      <div class="info-panel">
+        <h2>All-Time Return</h2>
+        <span id="allTimeReturn" class="value">Loading...</span>
+      </div>
     </div>
 
-    <section aria-label="Returns Table">
-      <h2 style="text-align:center; color:#1e40af;">Returns (%)</h2>
-      <table class="returns-table" aria-live="polite">
-        <thead>
-          <tr>
-            <th>Period</th>
-            <th>Return (%)</th>
-          </tr>
-        </thead>
-        <tbody id="returnsBody">
-          <tr><td>1 Day</td><td id="return-1d">Loading...</td></tr>
-          <tr><td>1 Month</td><td id="return-1m">Loading...</td></tr>
-          <tr><td>3 Months</td><td id="return-3m">Loading...</td></tr>
-          <tr><td>6 Months</td><td id="return-6m">Loading...</td></tr>
-          <tr><td>1 Year</td><td id="return-1y">Loading...</td></tr>
-        </tbody>
-      </table>
+    <section class="chart-section" aria-label="P&L Over Time Chart">
+      <h2>P&L Over Time</h2>
+      <canvas id="pnlChart" width="900" height="300" role="img" aria-describedby="pnlDesc"></canvas>
+      <p id="pnlDesc" class="sr-only">Line chart showing cumulative profit and loss over time</p>
     </section>
 
     <section class="trade-log" aria-label="Trade Log">
@@ -247,13 +221,16 @@
     </section>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
+    const INITIAL_CAPITAL = 100000; // Change this to your actual initial capital
+
     async function fetchData() {
       try {
-        const [betaRes, balRes, returnsRes, tradesRes] = await Promise.all([
+        const [betaRes, balRes, pnlRes, tradesRes] = await Promise.all([
           fetch('/api/portfolio_beta'),
           fetch('/api/account_balance'),
-          fetch('/api/returns'),
+          fetch('/api/pnl'),
           fetch('/api/trades'),
         ]);
 
@@ -261,30 +238,79 @@
         document.getElementById('portfolioBeta').textContent = betaData.portfolio_beta ?? 'N/A';
 
         const balData = await balRes.json();
-        document.getElementById('liveEquity').textContent = balData.equity != null ? `$${balData.equity.toFixed(2)}` : 'N/A';
+        const currentEquity = balData.equity;
+        document.getElementById('liveEquity').textContent = currentEquity != null ? `$${currentEquity.toFixed(2)}` : 'N/A';
 
-        const returnsData = await returnsRes.json();
-        ['1d', '1m', '3m', '6m', '1y'].forEach(period => {
-          const el = document.getElementById(`return-${period}`);
-          if (returnsData[period] == null) {
-            el.textContent = 'N/A';
-            el.classList.remove('positive', 'negative');
-            el.style.color = '';
-          } else {
-            const val = returnsData[period];
-            el.textContent = val.toFixed(2) + '%';
-            el.classList.remove('positive', 'negative');
-            if (val >= 0) {
-              el.classList.add('positive');
-              el.style.color = '#16a34a'; // green
-            } else {
-              el.classList.add('negative');
-              el.style.color = '#dc2626'; // red
+        // Calculate All-Time Return
+        if(currentEquity != null) {
+          const allTimeReturn = ((currentEquity - INITIAL_CAPITAL) / INITIAL_CAPITAL) * 100;
+          const allTimeReturnEl = document.getElementById('allTimeReturn');
+          allTimeReturnEl.textContent = allTimeReturn.toFixed(2) + '%';
+          allTimeReturnEl.style.color = allTimeReturn >= 0 ? '#16a34a' : '#dc2626';
+        } else {
+          document.getElementById('allTimeReturn').textContent = 'N/A';
+          document.getElementById('allTimeReturn').style.color = '';
+        }
+
+        const pnlData = await pnlRes.json();
+        const trades = await tradesRes.json();
+
+        // Chart (still cumulative P&L for now)
+        const ctx = document.getElementById('pnlChart').getContext('2d');
+        const labels = pnlData.map(p => p.date);
+        const data = pnlData.map(p => Number(p.pnl.toFixed(2)));
+        if (window.pnlChartInstance) window.pnlChartInstance.destroy();
+
+        window.pnlChartInstance = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [{
+              label: 'Cumulative P&L',
+              data,
+              borderColor: '#2563eb',
+              backgroundColor: 'rgba(37, 99, 235, 0.25)',
+              fill: true,
+              tension: 0.3,
+              pointRadius: 3,
+              pointHoverRadius: 5,
+            }]
+          },
+          options: {
+            responsive: false,
+            plugins: {
+              legend: {
+                labels: { font: { weight: 'bold', size: 14 } }
+              },
+              tooltip: {
+                mode: 'index',
+                intersect: false,
+                callbacks: {
+                  label: ctx => `$${ctx.parsed.y.toFixed(2)}`
+                }
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                grid: {
+                  color: '#e0e7ff'
+                },
+                ticks: {
+                  font: { size: 12 }
+                }
+              },
+              x: {
+                grid: {
+                  color: '#e0e7ff'
+                },
+                ticks: {
+                  font: { size: 12 }
+                }
+              }
             }
           }
         });
-
-        const trades = await tradesRes.json();
 
         // Trades Table
         const tbody = document.querySelector('#tradeTable tbody');
