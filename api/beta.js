@@ -1,0 +1,29 @@
+export default async function handler(req, res) {
+  const { FINNHUB_API_KEY, ALPACA_API_KEY_ID, ALPACA_SECRET_KEY } = process.env;
+
+  const positionsRes = await fetch('https://paper-api.alpaca.markets/v2/positions', {
+    headers: {
+      'APCA-API-KEY-ID': ALPACA_API_KEY_ID,
+      'APCA-API-SECRET-KEY': ALPACA_SECRET_KEY
+    }
+  });
+
+  const positions = await positionsRes.json();
+  let betaSum = 0;
+  let totalValue = 0;
+
+  for (const pos of positions) {
+    const ticker = pos.symbol;
+    const qty = parseFloat(pos.qty);
+    const market_value = parseFloat(pos.market_value);
+    const betaRes = await fetch(`https://finnhub.io/api/v1/stock/metric?symbol=${ticker}&metric=all&token=${FINNHUB_API_KEY}`);
+    const betaData = await betaRes.json();
+
+    const beta = betaData.metric && betaData.metric.beta ? parseFloat(betaData.metric.beta) : 1;
+    betaSum += beta * market_value;
+    totalValue += market_value;
+  }
+
+  const portfolioBeta = totalValue ? (betaSum / totalValue).toFixed(2) : 0;
+  res.status(200).json({ portfolio_beta: portfolioBeta });
+}
