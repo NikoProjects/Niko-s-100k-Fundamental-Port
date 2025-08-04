@@ -109,7 +109,7 @@
       margin-bottom: 1rem;
       text-align: center;
     }
-    canvas#pnlChart {
+    canvas#equityChart {
       display: block;
       max-width: 100%;
       margin: 0 auto;
@@ -202,19 +202,6 @@
       word-break: break-all;
     }
 
-    /* Screen-reader only */
-    .sr-only {
-      position: absolute !important;
-      width: 1px !important;
-      height: 1px !important;
-      padding: 0 !important;
-      margin: -1px !important;
-      overflow: hidden !important;
-      clip: rect(0, 0, 0, 0) !important;
-      white-space: nowrap !important;
-      border: 0 !important;
-    }
-
     /* Responsive tweaks */
     @media (max-width: 720px) {
       .info-panels {
@@ -247,10 +234,10 @@
       </div>
     </div>
 
-    <section class="chart-section" aria-label="P&L Over Time Chart">
-      <h2>P&L Over Time</h2>
-      <canvas id="pnlChart" width="900" height="300" role="img" aria-describedby="pnlDesc"></canvas>
-      <p id="pnlDesc" class="sr-only">Line chart showing cumulative profit and loss over time</p>
+    <section class="chart-section" aria-label="Portfolio Equity Over Time Chart">
+      <h2>Portfolio Equity Over Time</h2>
+      <canvas id="equityChart" width="900" height="300" role="img" aria-describedby="equityDesc"></canvas>
+      <p id="equityDesc" class="sr-only">Line chart showing portfolio equity over time</p>
     </section>
 
     <section aria-label="Returns Table">
@@ -298,7 +285,7 @@
           fetch('/api/portfolio_beta'),
           fetch('/api/account_balance'),
           fetch('/api/returns'),
-          fetch('/api/pnl'),
+          fetch('/api/pnl'),       // Should return equity over time [{date, equity}, ...]
           fetch('/api/trades'),
         ]);
 
@@ -329,24 +316,24 @@
           }
         });
 
-        const pnlData = await pnlRes.json();
+        const equityData = await pnlRes.json();
         const trades = await tradesRes.json();
 
-        // Chart
-        const ctx = document.getElementById('pnlChart').getContext('2d');
-        const labels = pnlData.map(p => p.date);
-        const data = pnlData.map(p => +p.pnl.toFixed(2)); // ensure number
-        if (window.pnlChartInstance) window.pnlChartInstance.destroy();
+        // Equity Chart
+        const ctx = document.getElementById('equityChart').getContext('2d');
+        const labels = equityData.map(p => p.date);
+        const data = equityData.map(p => Number(p.equity.toFixed(2)));
+        if (window.equityChartInstance) window.equityChartInstance.destroy();
 
-        window.pnlChartInstance = new Chart(ctx, {
+        window.equityChartInstance = new Chart(ctx, {
           type: 'line',
           data: {
             labels,
             datasets: [{
-              label: 'Cumulative P&L',
+              label: 'Portfolio Equity',
               data,
-              borderColor: '#2563eb',
-              backgroundColor: 'rgba(37, 99, 235, 0.25)',
+              borderColor: '#16a34a',
+              backgroundColor: 'rgba(22, 163, 74, 0.25)',
               fill: true,
               tension: 0.3,
               pointRadius: 3,
@@ -369,21 +356,13 @@
             },
             scales: {
               y: {
-                beginAtZero: true,
-                grid: {
-                  color: '#e0e7ff'
-                },
-                ticks: {
-                  font: { size: 12 }
-                }
+                beginAtZero: false,
+                grid: { color: '#d1fae5' },
+                ticks: { font: { size: 12 } }
               },
               x: {
-                grid: {
-                  color: '#e0e7ff'
-                },
-                ticks: {
-                  font: { size: 12 }
-                }
+                grid: { color: '#d1fae5' },
+                ticks: { font: { size: 12 } }
               }
             }
           }
