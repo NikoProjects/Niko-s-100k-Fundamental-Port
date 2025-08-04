@@ -45,7 +45,7 @@
   <p>Live Alpaca account data.</p>
 
   <h2>Live Portfolio Equity: <span id="liveEquity">Loading...</span></h2>
-  <h2>Portfolio Beta: <span id="portfolioBeta">Loading...</span></h2>
+  <h2>Portfolio : <span id="portfolioBeta">Loading...</span></h2>
 
   <h2>P&L Over Time</h2>
   <canvas id="pnlChart" width="900" height="300"></canvas>
@@ -76,7 +76,6 @@
         <th>Side</th>
         <th>Quantity</th>
         <th>Price</th>
-        <th>Beta</th>
         <th>Execution ID</th>
       </tr>
     </thead>
@@ -150,7 +149,6 @@
             <td>${t.side}</td>
             <td>${t.qty}</td>
             <td>$${Number(t.price).toFixed(2)}</td>
-            <td>${Number(t.beta).toFixed(2)}</td>
             <td style="font-size: 0.8em; color: #666;">${t.id}</td>
           `;
           tbody.appendChild(tr);
