@@ -202,6 +202,19 @@
       word-break: break-all;
     }
 
+    /* Screen-reader only */
+    .sr-only {
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      padding: 0 !important;
+      margin: -1px !important;
+      overflow: hidden !important;
+      clip: rect(0, 0, 0, 0) !important;
+      white-space: nowrap !important;
+      border: 0 !important;
+    }
+
     /* Responsive tweaks */
     @media (max-width: 720px) {
       .info-panels {
@@ -322,7 +335,7 @@
         // Chart
         const ctx = document.getElementById('pnlChart').getContext('2d');
         const labels = pnlData.map(p => p.date);
-        const data = pnlData.map(p => Number(p.pnl.toFixed(2)));
+        const data = pnlData.map(p => +p.pnl.toFixed(2)); // ensure number
         if (window.pnlChartInstance) window.pnlChartInstance.destroy();
 
         window.pnlChartInstance = new Chart(ctx, {
