@@ -11,21 +11,20 @@ export default async function handler(req, res) {
   const positions = await positionsRes.json();
   let betaSum = 0;
   let totalValue = 0;
-
+  
   for (const pos of positions) {
     const ticker = pos.symbol;
-    const qty = parseFloat(pos.qty);
     const market_value = parseFloat(pos.market_value);
+  
     const betaRes = await fetch(`https://finnhub.io/api/v1/stock/metric?symbol=${ticker}&metric=all&token=${FINNHUB_API_KEY}`);
     const betaData = await betaRes.json();
-
-    const beta = betaData.metric && betaData.metric.beta ? parseFloat(betaData.metric.beta) : 1;
+  
+    const beta = betaData.metric?.beta ? parseFloat(betaData.metric.beta) : 1;
     const direction = market_value >= 0 ? 1 : -1;
+  
     betaSum += beta * Math.abs(market_value) * direction;
-
-    totalValue += market_value;
+    totalValue += Math.abs(market_value); // Always positive
   }
-
+  
   const portfolioBeta = totalValue ? (betaSum / totalValue).toFixed(2) : 0;
   res.status(200).json({ portfolio_beta: portfolioBeta });
-}
