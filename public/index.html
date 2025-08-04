@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Fundamental Portfolio Dashboard</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    h1 { margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Live Portfolio Dashboard</h1>
+
+  <div id="account-info">Loading account data...</div>
+  <div id="positions">Loading positions...</div>
+  <div id="portfolio-beta">Loading beta...</div>
+
+  <script>
+    async function fetchAccount() {
+      const res = await fetch('/api/account');
+      const data = await res.json();
+      document.getElementById('account-info').innerText = `Equity: $${data.equity}, Cash: $${data.cash}, P&L: $${data.portfolio_value - data.equity}`;
+    }
+
+    async function fetchPositions() {
+      const res = await fetch('/api/portfolio');
+      const data = await res.json();
+      document.getElementById('positions').innerText = `Positions: ${data.length} open positions.`;
+    }
+
+    async function fetchBeta() {
+      const res = await fetch('/api/beta');
+      const data = await res.json();
+      document.getElementById('portfolio-beta').innerText = `Estimated Portfolio Beta: ${data.portfolio_beta}`;
+    }
+
+    fetchAccount();
+    fetchPositions();
+    fetchBeta();
+  </script>
+</body>
+</html>
